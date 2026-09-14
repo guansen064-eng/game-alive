@@ -1,0 +1,33 @@
+server:
+  port: ${PORT:3000}
+  shutdown: graceful
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: alive-game-api
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:alive_game}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${MYSQL_USER:alive_app}
+    password: ${MYSQL_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 5000
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 3s
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
+
+app:
+  session-ttl-seconds: ${SESSION_TTL_SECONDS:604800}
+  cookie-secure: ${COOKIE_SECURE:false}
+
+logging:
+  level:
+    root: INFO
+    com.alive.game: INFO

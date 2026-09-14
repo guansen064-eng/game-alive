@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>ALIVE browser smoke test</title>
+  <style>
+    html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <iframe id="game-frame" src="../index.html" title="ALIVE gameplay smoke test"></iframe>
+  <script>
+    document.querySelector("#game-frame").addEventListener("load", (event) => {
+      const gameDocument = event.currentTarget.contentDocument;
+      let attempts = 0;
+      const enterGame = setInterval(() => {
+        attempts += 1;
+        gameDocument.querySelector("#guest-button")?.click();
+        if (!gameDocument.body.classList.contains("auth-open") || attempts >= 8) {
+          clearInterval(enterGame);
+          gameDocument.querySelector("#start-button")?.click();
+        }
+      }, 250);
+    });
+  </script>
+</body>
+</html>

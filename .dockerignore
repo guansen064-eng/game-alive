@@ -1,0 +1,6 @@
+.git
+.env
+backend/target
+project.godot
+main.tscn
+scripts

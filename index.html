@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="ALIVE：一款可以直接在浏览器中游玩的生存肉鸽小游戏。">
+  <title>ALIVE // 生存协议</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="audio.js" defer></script>
+  <script src="menu-ui.js" defer></script>
+  <script src="auth-ui.js" defer></script>
+  <script src="balance.js" defer></script>
+  <script src="weapons.js" defer></script>
+  <script src="director.js" defer></script>
+  <script src="upgrade-system.js" defer></script>
+  <script src="game.js" defer></script>
+</head>
+<body class="is-menu">
+  <main id="game-shell" aria-label="ALIVE 生存肉鸽游戏">
+    <canvas id="game" tabindex="0" aria-label="游戏画面"></canvas>
+
+    <section id="start-overlay" class="start-screen" aria-modal="true" role="dialog" aria-labelledby="start-title">
+      <header class="start-nav">
+        <div class="brand-lockup"><i></i><strong>ALIVE</strong><span>生存协议</span></div>
+        <div class="start-nav-actions">
+          <div class="build-mark">WEB BUILD <b>1.0</b></div>
+          <button id="account-button" class="account-button" type="button">
+            <i id="account-avatar" aria-hidden="true">?</i><span id="account-label">登录 / 创建账号</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="start-layout">
+        <div class="start-copy">
+          <h1 id="start-title"><span>ALIVE</span><small>在信号消失前，活下去。</small></h1>
+          <p class="start-lead">移动、闪避、升级。武器会自动锁定最近目标，你只需要决定下一步站在哪里。</p>
+          <div class="start-actions">
+            <button id="start-button" class="launch-button" type="button">
+              <span>开始生存</span><i aria-hidden="true">→</i>
+            </button>
+          </div>
+          <div class="best-record">
+            <span>本机最佳纪录</span>
+            <strong id="best-record">尚未建立</strong>
+          </div>
+        </div>
+      </div>
+
+      <nav class="menu-dock" aria-label="游戏菜单">
+        <button id="open-arsenal" type="button">
+          <i aria-hidden="true">◈</i><span><strong>武器库</strong><small>查看装备与出战编队</small></span><b>4 槽</b>
+        </button>
+        <button id="open-gacha" type="button">
+          <i aria-hidden="true">✦</i><span><strong>补给抽取</strong><small>获取新的武器核心</small></span><b>预览</b>
+        </button>
+      </nav>
+
+      <footer class="start-footer">
+        <span>自动瞄准</span><i></i><span>局内三选一</span><i></i><span>难度持续增长</span>
+        <small>按 Enter 快速开始</small>
+      </footer>
+    </section>
+
+    <section id="arsenal-overlay" class="menu-surface" hidden aria-labelledby="arsenal-title">
+      <header class="surface-header">
+        <button class="surface-back" type="button" data-close-surface aria-label="返回初始界面">←</button>
+        <div><h1 id="arsenal-title">武器库</h1><p>查看武器情报，并配置每局携带的四件装备。</p></div>
+        <div class="surface-resource"><span>已收集</span><strong id="weapon-count">5 / 8</strong></div>
+      </header>
+
+      <div class="arsenal-layout">
+        <section class="weapon-browser" aria-label="武器列表">
+          <div class="section-heading"><h2>全部武器</h2><span>选择武器查看详情</span></div>
+          <div id="weapon-grid" class="weapon-grid"></div>
+        </section>
+
+        <aside class="weapon-detail" aria-live="polite">
+          <div id="detail-art" class="detail-art" data-tone="cyan"><i></i></div>
+          <div class="detail-title"><span id="detail-rarity">稀有</span><h2 id="detail-name">脉冲炮</h2></div>
+          <p id="detail-description">高频发射能量弹，自动锁定距离最近的目标。</p>
+          <dl class="weapon-stats">
+            <div><dt>伤害</dt><dd id="detail-damage">10</dd></div>
+            <div><dt>射速</dt><dd id="detail-rate">0.62s</dd></div>
+            <div><dt>定位</dt><dd id="detail-role">主武器</dd></div>
+          </dl>
+          <button id="equip-weapon" class="equip-button" type="button">加入出战编队</button>
+          <small class="ui-preview-note">登录后保存编队会同步到账号。</small>
+        </aside>
+      </div>
+
+      <footer class="loadout-bar">
+        <div><h2>出战编队</h2><p>每局最多携带四件武器</p></div>
+        <div id="loadout-slots" class="loadout-slots" aria-label="四个出战武器槽位"></div>
+        <button id="save-loadout-button" class="confirm-loadout" type="button">保存编队</button>
+      </footer>
+    </section>
+
+    <section id="gacha-overlay" class="menu-surface gacha-surface" hidden aria-labelledby="gacha-title">
+      <header class="surface-header">
+        <button class="surface-back" type="button" data-close-surface aria-label="返回初始界面">←</button>
+        <div><h1 id="gacha-title">武器补给</h1><p>从深空补给中获取新的武器核心。</p></div>
+        <div class="surface-resource"><span>能量晶核</span><strong id="gacha-crystal">1,280</strong></div>
+      </header>
+
+      <div class="gacha-layout">
+        <section class="supply-showcase">
+          <div class="supply-art" aria-hidden="true"><i></i><b></b><span>✦</span></div>
+          <div class="supply-copy">
+            <span class="rarity-label">限定武器核心</span>
+            <h2>裂变轨道刃</h2>
+            <p>高速环绕玩家并切割敌群。重复获取可提升刃片数量与旋转速度。</p>
+            <ul><li>稀有武器概率提升</li><li>十次补给至少获得一件稀有武器</li></ul>
+          </div>
+        </section>
+
+        <aside class="supply-controls">
+          <div class="probability-row"><span>演示卡池</span><strong>距离保底 30 次</strong></div>
+          <div class="pity-track"><i></i></div>
+          <p>该页面目前只展示抽卡流程与视觉效果，不会扣除晶核，也不会修改武器库存。</p>
+          <button class="draw-button secondary" type="button" data-draw="1"><span>补给 1 次</span><b>100 晶核</b></button>
+          <button class="draw-button primary" type="button" data-draw="10"><span>补给 10 次</span><b>900 晶核</b></button>
+          <button class="odds-button" type="button" data-odds>查看概率说明</button>
+        </aside>
+      </div>
+    </section>
+
+    <section id="auth-overlay" class="auth-surface" hidden aria-modal="true" role="dialog" aria-labelledby="auth-title">
+      <div class="auth-panel">
+        <button id="auth-close" class="auth-close" type="button" aria-label="关闭账号界面">×</button>
+
+        <div id="auth-forms">
+          <h1 id="auth-title">进入生存协议</h1>
+          <p class="auth-intro">登录后可在不同设备同步账号、武器和出战编队。</p>
+
+          <div class="auth-tabs" role="tablist" aria-label="账号操作">
+            <button id="login-tab" class="active" type="button" role="tab" aria-selected="true">登录</button>
+            <button id="register-tab" type="button" role="tab" aria-selected="false">创建账号</button>
+          </div>
+
+          <form id="login-form" class="auth-form" novalidate>
+            <label><span>账号</span><input id="login-account" name="account" type="text" autocomplete="username" placeholder="输入账号" required></label>
+            <label><span>密码</span><span class="password-field"><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="输入密码" required><button type="button" data-toggle-password aria-label="显示密码">显示</button></span></label>
+            <div class="auth-form-row">
+              <label class="check-field"><input id="remember-login" type="checkbox" checked><span>保持登录</span></label>
+              <button class="text-action" type="button" data-demo-help>忘记密码？</button>
+            </div>
+            <button class="auth-submit" type="submit">登录账号</button>
+          </form>
+
+          <form id="register-form" class="auth-form" hidden novalidate>
+            <label><span>显示名称</span><input id="register-name" name="displayName" type="text" autocomplete="nickname" maxlength="16" placeholder="游戏内显示的名称" required></label>
+            <label><span>账号</span><input id="register-account" name="account" type="text" autocomplete="username" maxlength="20" placeholder="4–20 位字母、数字或下划线" required></label>
+            <label><span>密码</span><span class="password-field"><input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="至少 8 位" required><button type="button" data-toggle-password aria-label="显示密码">显示</button></span></label>
+            <label><span>确认密码</span><input id="register-confirm" name="confirmPassword" type="password" autocomplete="new-password" placeholder="再次输入密码" required></label>
+            <label class="check-field terms-field"><input id="register-terms" type="checkbox" required><span>我确认使用该账号保存游戏数据</span></label>
+            <button class="auth-submit" type="submit">创建并登录</button>
+          </form>
+
+          <p id="auth-message" class="auth-message" hidden role="alert"></p>
+          <button id="guest-button" class="guest-button" type="button">暂不登录，以游客身份进入</button>
+        </div>
+
+        <div id="account-summary" class="account-summary" hidden>
+          <div id="summary-avatar" class="summary-avatar">A</div>
+          <h1 id="summary-name">幸存者</h1>
+          <p id="summary-account">@survivor</p>
+          <dl><div><dt>账号状态</dt><dd>在线</dd></div><div><dt>数据位置</dt><dd>MySQL</dd></div></dl>
+          <button id="continue-button" class="auth-submit" type="button">返回初始界面</button>
+          <button id="logout-button" class="logout-button" type="button">退出登录</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="menu-toast" class="menu-toast" hidden role="status"></div>
+
+    <section class="hud" aria-live="polite">
+      <div class="status-card health-card">
+        <div class="status-line">
+          <span class="status-kicker">生命信号</span>
+          <strong id="health-text">100 / 100</strong>
+        </div>
+        <div class="bar health-track"><i id="health-fill"></i></div>
+      </div>
+
+      <div class="timer-block">
+        <span id="timer">00:00</span>
+        <small id="threat">威胁等级 1</small>
+      </div>
+
+      <div id="boss-status" class="boss-status" hidden>
+        <div><span>异常生命信号</span><strong id="boss-name">裂隙主脑</strong></div>
+        <div class="bar boss-track"><i id="boss-fill"></i></div>
+      </div>
+
+      <div class="status-card score-card">
+        <span>已清除</span>
+        <strong id="kills">0</strong>
+        <button id="sound-button" class="sound-button" type="button" aria-label="关闭音效">♪</button>
+        <button id="pause-button" type="button" aria-label="暂停游戏">Ⅱ</button>
+      </div>
+
+      <div class="experience-row">
+        <strong id="level">LV.1</strong>
+        <div class="bar xp-track"><i id="xp-fill"></i></div>
+      </div>
+
+      <div id="overdrive-meter" class="overdrive-meter">
+        <span id="overdrive-text">超载充能 0%</span>
+        <div class="bar overdrive-track"><i id="overdrive-fill"></i></div>
+      </div>
+
+      <p class="controls-hint">WASD / 方向键移动 <b>·</b> 武器自动锁定目标 <b>·</b> P 暂停</p>
+
+      <div id="weapon-rack" class="weapon-rack" aria-label="当前武器">
+        <span class="active" data-weapon="pulse"><i>•</i>脉冲炮</span>
+        <span data-weapon="orbit"><i>◉</i>轨道刃</span>
+        <span data-weapon="chain"><i>ϟ</i>链闪</span>
+        <span data-weapon="nova"><i>◎</i>冲击波</span>
+        <span data-weapon="drone"><i>◆</i>无人机</span>
+      </div>
+    </section>
+
+    <div id="combo-display" class="combo-display" hidden>
+      <strong id="combo-count">3</strong><span>连杀</span>
+    </div>
+
+    <div id="boss-warning" class="boss-warning" hidden>
+      <span>WARNING</span><strong>高能生命信号正在接近</strong>
+    </div>
+
+    <div id="event-banner" class="event-banner" hidden>
+      <span id="event-name">敌潮事件</span><strong id="event-description">异常信号正在接近</strong>
+    </div>
+
+    <div id="pause-badge" class="pause-badge" hidden>
+      <span>系统已暂停</span>
+      <small>按 P 或点击右上角继续</small>
+    </div>
+
+    <section id="upgrade-overlay" class="overlay" hidden aria-modal="true" role="dialog" aria-labelledby="upgrade-title">
+      <div class="modal upgrade-modal">
+        <h1 id="upgrade-title">选择一项强化</h1>
+        <p class="modal-copy">生存时间暂停。选择将立即生效。</p>
+        <div id="upgrade-options" class="upgrade-options"></div>
+      </div>
+    </section>
+
+    <section id="game-over-overlay" class="overlay danger-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="game-over-title">
+      <div class="modal game-over-modal">
+        <h1 id="game-over-title">信号中断</h1>
+        <div id="result" class="result-grid"></div>
+        <button id="restart-button" class="primary-button" type="button">重新出发 <kbd>Enter</kbd></button>
+        <button id="menu-button" class="menu-button" type="button">返回初始界面</button>
+      </div>
+    </section>
+
+    <div id="joystick" class="joystick" aria-hidden="true">
+      <i id="joystick-knob"></i>
+    </div>
+
+    <div class="corner-mark" aria-hidden="true">ALIVE <span>// 01</span></div>
+  </main>
+</body>
+</html>

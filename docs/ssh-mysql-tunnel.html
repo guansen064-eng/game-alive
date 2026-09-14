@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alive：从 Windows 连接服务器 MySQL</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, "Microsoft YaHei", sans-serif; }
+    body { max-width: 780px; margin: 0 auto; padding: 32px 20px 64px; background: #091016; color: #dce8ef; line-height: 1.7; }
+    h1, h2 { line-height: 1.25; color: #fff; }
+    h1 { font-size: clamp(28px, 6vw, 48px); }
+    .flow { padding: 18px; border: 1px solid #315467; border-radius: 14px; background: #0e1a22; color: #80e8ff; text-align: center; }
+    code { color: #a8f0cc; }
+    pre { overflow-x: auto; padding: 16px; border-radius: 10px; background: #05090c; border: 1px solid #263943; }
+    .note { border-left: 3px solid #ffcc66; padding-left: 14px; color: #ffe3a6; }
+    a { color: #80e8ff; }
+  </style>
+</head>
+<body>
+  <h1>从 Windows 安全连接 Alive 的 MySQL</h1>
+  <p>这条命令在你的 Windows 电脑上运行，不是在腾讯云服务器中运行。</p>
+  <p class="flow">Windows 127.0.0.1:3307 → 加密 SSH 连接 → 服务器 127.0.0.1:3306 → MySQL</p>
+
+  <h2>1. 打开 PowerShell</h2>
+  <p>按 <code>Win + R</code>，输入 <code>powershell</code>，按回车。</p>
+
+  <h2>2. 建立隧道</h2>
+  <pre><code>ssh -N -L 3307:127.0.0.1:3306 deploy@203.0.113.10</code></pre>
+  <p><code>203.0.113.10</code> 是文档示例地址，请替换为实际服务器地址。第一次连接输入 <code>yes</code>，然后输入对应 SSH 用户的密码。输入密码时屏幕不显示字符，这是正常的。</p>
+  <p class="note">连接成功后窗口会一直空着。不要关闭它；关闭或按 Ctrl+C 就会断开隧道。</p>
+  <p>只有从 Windows 操作数据库时需要保持隧道。网站和服务器中的 Spring Boot 会直接连接 MySQL，不依赖这个 PowerShell 窗口。数据库客户端若支持 SSH，可以由客户端在每次连接时自动建立隧道。</p>
+
+  <h2>3. 打开数据库客户端</h2>
+  <pre><code>主机：127.0.0.1
+端口：3307
+数据库：alive_game
+用户名：alive_app
+密码：服务器 .env 中的 MYSQL_PASSWORD</code></pre>
+  <p>这里不能填写服务器公网 IP，因为数据库客户端连接的是 Windows 上刚建立的隧道入口。</p>
+
+  <h2>4. 如果命令不可用</h2>
+  <p>先运行 <code>ssh -V</code>。若提示找不到命令，需要在 Windows“可选功能”中安装“OpenSSH 客户端”。</p>
+
+  <p>参考：<a href="https://learn.microsoft.com/windows-server/administration/openssh/openssh-overview">Microsoft OpenSSH 文档</a>；<a href="https://man.openbsd.org/ssh">OpenSSH ssh 手册</a>。</p>
+</body>
+</html>

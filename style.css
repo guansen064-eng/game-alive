@@ -638,6 +638,22 @@ button {
   text-shadow: 0 0 14px rgba(255, 218, 95, 0.74);
 }
 
+.performance-panel {
+  position: absolute;
+  bottom: max(116px, calc(env(safe-area-inset-bottom) + 107px));
+  left: max(30px, env(safe-area-inset-left));
+  display: block;
+  border: 1px solid rgba(104, 232, 255, 0.16);
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: rgba(4, 18, 31, 0.6);
+  color: rgba(186, 221, 234, 0.74);
+  font: 700 10px/1.55 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  letter-spacing: 0.04em;
+  white-space: pre;
+  text-shadow: 0 2px 8px #000;
+}
+
 .controls-hint {
   position: absolute;
   bottom: max(12px, env(safe-area-inset-bottom));
@@ -1153,6 +1169,7 @@ kbd {
   }
 
   .controls-hint,
+  .performance-panel,
   .corner-mark {
     display: none;
   }

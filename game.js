@@ -33,6 +33,7 @@
     comboDisplay: document.querySelector("#combo-display"),
     comboCount: document.querySelector("#combo-count"),
     weaponRack: document.querySelector("#weapon-rack"),
+    performancePanel: document.querySelector("#performance-panel"),
     soundButton: document.querySelector("#sound-button"),
     pauseButton: document.querySelector("#pause-button"),
     pauseBadge: document.querySelector("#pause-badge"),
@@ -50,6 +51,9 @@
 
   const WORLD = { width: 2400, height: 1600 };
   const TAU = Math.PI * 2;
+  const ENTITY_LIMITS = Object.freeze({ enemies: 450, projectiles: 420, gems: 500, particles: 600, floaters: 80 });
+  const ENEMY_GRID_CELL_SIZE = 160;
+  const MAX_ENEMY_RADIUS = 58;
   const keys = new Set();
   const enemies = [];
   const projectiles = [];
@@ -58,6 +62,8 @@
   const floaters = [];
   const lightningEffects = [];
   const shockwaves = [];
+  const enemyGrid = new Map();
+  const enemyCandidates = [];
   const ambientDots = Array.from({ length: 90 }, (_, index) => ({
     x: 45 + ((index * 277) % (WORLD.width - 90)),
     y: 45 + ((index * 163) % (WORLD.height - 90)),
@@ -72,6 +78,7 @@
   let joystickPointer = null;
   const joystickInput = { x: 0, y: 0 };
   let currentEvent = null;
+  const performanceSample = { startedAt: performance.now(), frames: 0, totalFrameMs: 0 };
 
   const state = {
     mode: "menu",
@@ -168,6 +175,8 @@
     floaters.length = 0;
     lightningEffects.length = 0;
     shockwaves.length = 0;
+    enemyGrid.clear();
+    enemyCandidates.length = 0;
     player = createPlayer();
     nextEnemyId = 1;
     state.mode = mode;
@@ -264,6 +273,71 @@
     return dx * dx + dy * dy;
   }
 
+  function gridKey(column, row) {
+    return `${column},${row}`;
+  }
+
+  function rebuildEnemyGrid() {
+    for (const bucket of enemyGrid.values()) bucket.length = 0;
+    for (const enemy of enemies) {
+      if (enemy.dead) continue;
+      const column = Math.floor(enemy.x / ENEMY_GRID_CELL_SIZE);
+      const row = Math.floor(enemy.y / ENEMY_GRID_CELL_SIZE);
+      const key = gridKey(column, row);
+      let bucket = enemyGrid.get(key);
+      if (!bucket) {
+        bucket = [];
+        enemyGrid.set(key, bucket);
+      }
+      bucket.push(enemy);
+    }
+  }
+
+  function findEnemyCandidates(x, y, radius) {
+    enemyCandidates.length = 0;
+    const searchRadius = radius + MAX_ENEMY_RADIUS;
+    const minColumn = Math.floor((x - searchRadius) / ENEMY_GRID_CELL_SIZE);
+    const maxColumn = Math.floor((x + searchRadius) / ENEMY_GRID_CELL_SIZE);
+    const minRow = Math.floor((y - searchRadius) / ENEMY_GRID_CELL_SIZE);
+    const maxRow = Math.floor((y + searchRadius) / ENEMY_GRID_CELL_SIZE);
+    for (let column = minColumn; column <= maxColumn; column++) {
+      for (let row = minRow; row <= maxRow; row++) {
+        const bucket = enemyGrid.get(gridKey(column, row));
+        if (bucket) enemyCandidates.push(...bucket);
+      }
+    }
+    return enemyCandidates;
+  }
+
+  function findNearestEnemy(origin, maximumDistance = Infinity, excluded = null) {
+    const candidates = Number.isFinite(maximumDistance)
+      ? findEnemyCandidates(origin.x, origin.y, maximumDistance)
+      : enemies;
+    let target = null;
+    let nearestDistance = maximumDistance * maximumDistance;
+    for (const enemy of candidates) {
+      if (enemy.dead || excluded?.has(enemy)) continue;
+      const distance = distanceSquared(origin, enemy);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        target = enemy;
+      }
+    }
+    return target;
+  }
+
+  function addProjectile(projectile) {
+    if (projectiles.length >= ENTITY_LIMITS.projectiles) return false;
+    projectiles.push(projectile);
+    return true;
+  }
+
+  function addGem(gem) {
+    if (gems.length >= ENTITY_LIMITS.gems) return false;
+    gems.push(gem);
+    return true;
+  }
+
   function normalized(dx, dy) {
     const length = Math.hypot(dx, dy) || 1;
     return { x: dx / length, y: dy / length };
@@ -287,7 +361,7 @@
   }
 
   function spawnEnemy() {
-    if (enemies.length >= 450) return;
+    if (enemies.length >= ENTITY_LIMITS.enemies) return;
     const threat = state.time / balanceConfig.enemy.threatSeconds;
     const eliteMultiplier = currentEvent?.eliteMultiplier || 1;
     const eliteChance = state.time < 45 ? 0 : Math.min(0.24, (0.035 + state.time / 1800) * eliteMultiplier);
@@ -378,17 +452,7 @@
   }
 
   function nearestEnemy() {
-    let target = null;
-    let nearestDistance = Infinity;
-    for (const enemy of enemies) {
-      if (enemy.dead) continue;
-      const distance = distanceSquared(player, enemy);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        target = enemy;
-      }
-    }
-    return target;
+    return findNearestEnemy(player);
   }
 
   function fireWeapon() {
@@ -406,7 +470,7 @@
     for (let index = 0; index < projectileCount; index++) {
       const offset = (index - (projectileCount - 1) * 0.5) * spread;
       const angle = baseAngle + offset;
-      projectiles.push({
+      addProjectile({
         x: player.x + direction.x * 24,
         y: player.y + direction.y * 24,
         previousX: player.x,
@@ -462,7 +526,7 @@
     chargeOverdrive(enemy);
     if (enemy.boss) {
       state.bossesDefeated += 1;
-      gems.push({ x: enemy.x, y: enemy.y, value: balanceConfig.xp.bossGemValue, spin: Math.random() * TAU });
+      addGem({ x: enemy.x, y: enemy.y, value: balanceConfig.xp.bossGemValue, spin: Math.random() * TAU });
       shockwaves.push({ x: enemy.x, y: enemy.y, radius: 10, maxRadius: 260, life: 0.8, maxLife: 0.8, color: "#e08aff" });
       burst(enemy.x, enemy.y, "#d779ff", 42, 280);
       audio.play("bossKill");
@@ -472,7 +536,7 @@
         return;
       }
     } else {
-      gems.push({
+      addGem({
         x: enemy.x,
         y: enemy.y,
         value: enemy.elite ? balanceConfig.xp.eliteGemValue : balanceConfig.xp.normalGemValue,
@@ -703,6 +767,7 @@
       }
     }
 
+    rebuildEnemyGrid();
     updateSpecialWeapons();
 
     for (let index = projectiles.length - 1; index >= 0; index--) {
@@ -714,7 +779,7 @@
       bullet.life -= delta;
       let expired = bullet.life <= 0;
       if (!expired) {
-        for (const enemy of enemies) {
+        for (const enemy of findEnemyCandidates(bullet.x, bullet.y, 8)) {
           if (enemy.dead || bullet.hitIds.has(enemy.id)) continue;
           if (distanceSquared(bullet, enemy) <= Math.pow(enemy.radius + 8, 2)) {
             bullet.hitIds.add(enemy.id);
@@ -767,7 +832,7 @@
         const angle = player.orbitAngle + blade / player.orbitBlades * TAU;
         const bladeX = player.x + Math.cos(angle) * orbitRadius;
         const bladeY = player.y + Math.sin(angle) * orbitRadius;
-        for (const enemy of enemies) {
+        for (const enemy of findEnemyCandidates(bladeX, bladeY, 12)) {
           if (enemy.dead || enemy.orbitCooldown > 0) continue;
           const dx = enemy.x - bladeX;
           const dy = enemy.y - bladeY;
@@ -787,25 +852,17 @@
   }
 
   function fireChainLightning() {
-    const living = enemies.filter((enemy) => !enemy.dead);
-    if (!living.length) return;
     const targets = [];
+    const selected = new Set();
     let origin = player;
     const evolved = player.weaponProgress.chain.evolved;
     const maximumTargets = 2 + player.chainLevel + (evolved ? 4 : 0);
     for (let index = 0; index < maximumTargets; index++) {
-      let nearest = null;
-      let nearestDistance = index === 0 ? 500 * 500 : 280 * 280;
-      for (const enemy of living) {
-        if (targets.includes(enemy)) continue;
-        const distance = distanceSquared(origin, enemy);
-        if (distance < nearestDistance) {
-          nearest = enemy;
-          nearestDistance = distance;
-        }
-      }
+      const maximumDistance = index === 0 ? 500 : 280;
+      const nearest = findNearestEnemy(origin, maximumDistance, selected);
       if (!nearest) break;
       targets.push(nearest);
+      selected.add(nearest);
       origin = nearest;
     }
     if (!targets.length) return;
@@ -827,7 +884,7 @@
     const evolved = player.weaponProgress.nova.evolved;
     const radius = 175 + player.novaLevel * 18 + (evolved ? 95 : 0);
     const damage = (11 + player.novaLevel * 8) * (evolved ? 1.7 : 1);
-    for (const enemy of enemies) {
+    for (const enemy of findEnemyCandidates(player.x, player.y, radius)) {
       if (enemy.dead) continue;
       const distance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
       if (distance <= radius + enemy.radius) {
@@ -845,15 +902,22 @@
   function fireDrones() {
     const evolved = player.weaponProgress.drone.evolved;
     const droneCount = evolved ? 3 : 1 + Math.floor((player.droneLevel - 1) / 3);
-    const living = enemies.filter((enemy) => !enemy.dead).sort((a, b) => distanceSquared(player, a) - distanceSquared(player, b));
-    if (!living.length) return;
+    const targets = [];
+    const selected = new Set();
+    for (let index = 0; index < droneCount; index++) {
+      const target = findNearestEnemy(player, Infinity, selected);
+      if (!target) break;
+      targets.push(target);
+      selected.add(target);
+    }
+    if (!targets.length) return;
     for (let index = 0; index < droneCount; index++) {
       const angle = player.orbitAngle * 0.62 + index / droneCount * TAU;
       const originX = player.x + Math.cos(angle) * 43;
       const originY = player.y + Math.sin(angle) * 43;
-      const target = living[index % Math.min(living.length, droneCount)];
+      const target = targets[index % targets.length];
       const direction = normalized(target.x - originX, target.y - originY);
-      projectiles.push({
+      addProjectile({
         x: originX,
         y: originY,
         previousX: originX,
@@ -901,8 +965,8 @@
   }
 
   function burst(x, y, color, count, speed) {
-    if (particles.length > 600) return;
-    for (let index = 0; index < count; index++) {
+    const available = Math.max(0, ENTITY_LIMITS.particles - particles.length);
+    for (let index = 0; index < Math.min(count, available); index++) {
       const angle = Math.random() * TAU;
       const velocity = random(speed * 0.35, speed);
       particles.push({
@@ -917,7 +981,7 @@
   }
 
   function addFloater(x, y, text, color) {
-    if (floaters.length > 80) return;
+    if (floaters.length >= ENTITY_LIMITS.floaters) return;
     floaters.push({ x, y, text, color, life: 0.65, maxLife: 0.65 });
   }
 
@@ -1306,6 +1370,19 @@
     ui.comboCount.textContent = `×${state.combo}`;
   }
 
+  function updatePerformancePanel(now, frameMs) {
+    performanceSample.frames += 1;
+    performanceSample.totalFrameMs += frameMs;
+    const elapsed = now - performanceSample.startedAt;
+    if (elapsed < 500) return;
+    const fps = performanceSample.frames * 1000 / elapsed;
+    const averageFrameMs = performanceSample.totalFrameMs / performanceSample.frames;
+    ui.performancePanel.textContent = `FPS ${fps.toFixed(0)} · ${averageFrameMs.toFixed(1)} ms\n敌人 ${enemies.length}/${ENTITY_LIMITS.enemies} · 弹丸 ${projectiles.length}/${ENTITY_LIMITS.projectiles} · 掉落 ${gems.length}/${ENTITY_LIMITS.gems}`;
+    performanceSample.startedAt = now;
+    performanceSample.frames = 0;
+    performanceSample.totalFrameMs = 0;
+  }
+
   function updateWeaponRack() {
     for (const item of ui.weaponRack.querySelectorAll("[data-weapon]")) {
       const id = item.dataset.weapon;
@@ -1365,12 +1442,14 @@
   }
 
   function frame(now) {
-    const delta = Math.min(0.033, Math.max(0, (now - lastFrame) / 1000));
+    const frameMs = Math.max(0, now - lastFrame);
+    const delta = Math.min(0.033, frameMs / 1000);
     lastFrame = now;
     if (state.mode === "running") update(delta);
     else updateEffects(delta);
     draw();
     updateHud();
+    updatePerformancePanel(now, frameMs);
     requestAnimationFrame(frame);
   }
 

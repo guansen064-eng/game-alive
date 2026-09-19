@@ -7,7 +7,7 @@
   <meta name="description" content="ALIVE：一款可以直接在浏览器中游玩的生存肉鸽小游戏。">
   <title>ALIVE // 生存协议</title>
   <link rel="stylesheet" href="style.css">
-  <script src="audio.js" defer></script>
+  <script src="audio.js?v=20260919-mix2" defer></script>
   <script src="menu-ui.js" defer></script>
   <script src="auth-ui.js" defer></script>
   <script src="balance.js" defer></script>
@@ -39,6 +39,12 @@
             <button id="start-button" class="launch-button" type="button">
               <span>开始生存</span><i aria-hidden="true">→</i>
             </button>
+          </div>
+          <div class="music-settings">
+            <label for="music-volume">背景音乐</label>
+            <input id="music-volume" type="range" min="0" max="100" step="5" value="50" aria-describedby="music-description">
+            <output id="music-volume-value" for="music-volume">50%</output>
+            <small id="music-description">深空脉冲 · 开始后播放，调至 0 可仅保留音效</small>
           </div>
           <div class="best-record">
             <span>本机最佳纪录</span>
@@ -196,7 +202,7 @@
       <div class="status-card score-card">
         <span>已清除</span>
         <strong id="kills">0</strong>
-        <button id="sound-button" class="sound-button" type="button" aria-label="关闭音效">♪</button>
+        <button id="sound-button" class="sound-button" type="button" aria-label="关闭音乐与音效" aria-pressed="false" title="关闭音乐与音效">♪</button>
         <button id="pause-button" type="button" aria-label="暂停游戏">Ⅱ</button>
       </div>
 

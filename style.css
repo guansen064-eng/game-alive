@@ -202,6 +202,42 @@ button {
   line-height: 1.75;
 }
 
+.music-settings {
+  display: grid;
+  grid-template-columns: auto minmax(70px, 160px) 3.5ch;
+  align-items: center;
+  gap: 10px 12px;
+  width: min(340px, 100%);
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.music-settings input {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--cyan);
+  min-height: 32px;
+  touch-action: pan-x;
+  cursor: pointer;
+}
+
+.music-settings input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.music-settings output {
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.music-settings small {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
 .start-actions {
   display: flex;
   align-items: center;

@@ -35,6 +35,8 @@
     weaponRack: document.querySelector("#weapon-rack"),
     performancePanel: document.querySelector("#performance-panel"),
     soundButton: document.querySelector("#sound-button"),
+    musicVolume: document.querySelector("#music-volume"),
+    musicVolumeValue: document.querySelector("#music-volume-value"),
     pauseButton: document.querySelector("#pause-button"),
     pauseBadge: document.querySelector("#pause-badge"),
     upgradeOverlay: document.querySelector("#upgrade-overlay"),
@@ -168,6 +170,7 @@
   }
 
   function resetGame(mode = "running") {
+    audio.resetMusic?.();
     enemies.length = 0;
     projectiles.length = 0;
     gems.length = 0;
@@ -1361,6 +1364,7 @@
       : `超载充能 ${Math.round(state.overdriveCharge)}%`;
     ui.overdriveFill.style.setProperty("--bar-fill", overdriveActive ? 1 : state.overdriveCharge / 100);
     const boss = enemies.find((enemy) => enemy.boss && !enemy.dead);
+    audio.setMusicState?.(state.mode, Boolean(boss));
     ui.bossStatus.hidden = !boss || state.mode === "menu";
     if (boss) {
       ui.bossName.textContent = boss.name;
@@ -1403,7 +1407,10 @@
     const enabled = audio.isEnabled();
     ui.soundButton.classList.toggle("muted", !enabled);
     ui.soundButton.textContent = enabled ? "♪" : "×";
-    ui.soundButton.setAttribute("aria-label", enabled ? "关闭音效" : "开启音效");
+    const label = enabled ? "关闭音乐与音效" : "开启音乐与音效";
+    ui.soundButton.setAttribute("aria-label", label);
+    ui.soundButton.setAttribute("aria-pressed", String(!enabled));
+    ui.soundButton.title = label;
   }
 
   function togglePause() {
@@ -1412,16 +1419,19 @@
       ui.pauseBadge.hidden = false;
       ui.pauseButton.textContent = "▶";
     } else if (state.mode === "paused") {
+      audio.unlock();
       state.mode = "running";
       ui.pauseBadge.hidden = true;
       ui.pauseButton.textContent = "Ⅱ";
       lastFrame = performance.now();
       canvas.focus();
     }
+    audio.setMusicState?.(state.mode, enemies.some((enemy) => enemy.boss && !enemy.dead));
   }
 
   function endGame(victory = false) {
     state.mode = "gameover";
+    audio.setMusicState?.("gameover");
     state.victory = victory;
     if (state.time > bestTime) {
       bestTime = state.time;
@@ -1479,6 +1489,7 @@
 
   window.addEventListener("resize", resize);
   window.addEventListener("keydown", (event) => {
+    if (event.target.matches?.('input[type="range"]')) return;
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
     if (!event.repeat && state.mode === "menu" && !document.body.classList.contains("menu-surface-open") && !document.body.classList.contains("auth-open") && (event.code === "Enter" || event.code === "Space")) {
       event.preventDefault();
@@ -1512,6 +1523,15 @@
     keys.clear();
     releaseJoystick();
     if (state.mode === "running") togglePause();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && state.mode === "running") togglePause();
+  });
+  ui.musicVolume.value = String(Math.round((audio.getMusicVolume?.() ?? 0.5) * 100));
+  ui.musicVolumeValue.textContent = `${ui.musicVolume.value}%`;
+  ui.musicVolume.addEventListener("input", () => {
+    audio.setMusicVolume?.(Number(ui.musicVolume.value) / 100);
+    ui.musicVolumeValue.textContent = `${ui.musicVolume.value}%`;
   });
   ui.startButton.addEventListener("click", () => {
     audio.unlock();

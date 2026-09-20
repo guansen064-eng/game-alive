@@ -240,8 +240,8 @@
   ui.openGacha.addEventListener("click", () => openSurface(ui.gacha, ui.openGacha));
   document.querySelectorAll("[data-close-surface]").forEach((button) => button.addEventListener("click", closeSurfaces));
   ui.saveLoadout.addEventListener("click", persistLoadout);
-  document.querySelectorAll("[data-draw]").forEach((button) => button.addEventListener("click", () => showToast("抽取 UI 已完成，武器掉落与晶核消耗将在下一阶段接入。")));
-  document.querySelector("[data-odds]").addEventListener("click", () => showToast("概率展示示例：稀有 8% · 史诗 2% · 限定 0.8%，最终数值尚未确定。"));
+  document.querySelectorAll("[data-draw]").forEach((button) => button.addEventListener("click", () => window.AliveGacha.open(Number(button.dataset.draw), weapons, button)));
+  document.querySelector("[data-odds]").addEventListener("click", () => showToast("演示从 8 把武器中等概率选择，可重复；不代表正式掉率，不扣晶核，也不累计保底。"));
   ui.equip.addEventListener("click", toggleEquip);
   window.addEventListener("keydown", (event) => {
     if (event.code === "Escape" && document.body.classList.contains("menu-surface-open")) {

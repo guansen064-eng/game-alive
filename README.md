@@ -11,7 +11,9 @@
 ```text
 index.html
 style.css
+gacha.css
 audio.js
+gacha-ui.js
 menu-ui.js
 auth-ui.js
 balance.js
@@ -75,6 +77,8 @@ mvn package
 - 五阶段、五次特殊敌潮事件与十分钟最终 Boss 构成完整单局流程
 - 本地最佳纪录与死亡结算
 - 初始菜单、武器图鉴、四槽出战编队和补给抽取 UI
+- 单抽 / 十连开箱动画：机械补给箱落地、蓄能开盖、稀有度光柱与奖励展台。可勾选记住“跳过开箱动画”，播放中点击跳过或按 Esc 直接查看同一组结果；再次按 Esc 返回。系统减少动态效果设置下自动跳过。
+- 抽取仍为免费演示：从现有八把武器中等概率选择（可重复），不会扣除晶核、发放库存或累计保底。
 - MySQL 账号注册、登录和玩家数据持久化
 - Redis 登录会话与登录接口限流
 - 武器库存与四槽编队跨设备同步
@@ -105,6 +109,8 @@ alive/
 ├─ upgrade-system.js   # 升级抽取、防连续重复与前期输出保底规则
 ├─ game.js             # 游戏循环、实体、武器与碰撞逻辑
 ├─ audio.js            # 独立的浏览器音效模块
+├─ gacha-ui.js         # 补给开箱动画、跳过与演示结果状态管理
+├─ gacha.css           # 机械补给箱、稀有度光柱和响应式奖励展台
 ├─ menu-ui.js          # 武器库、编队与补给抽取界面逻辑
 ├─ auth-ui.js          # 真实 API 注册、登录与会话界面逻辑
 ├─ backend/            # Spring Boot Maven 工程与 Dockerfile
@@ -121,6 +127,8 @@ alive/
 > 独立开发跨平台 HTML5 Canvas 生存肉鸽游戏，完成响应式 HUD、键盘/触控输入、自动战斗、多武器升级和首领战；采用 Java Spring Boot、MySQL、Redis 构建账号与玩家数据服务，通过 HttpOnly Cookie 管理会话，并使用 Docker Compose 与自定义网络完成容器化部署。
 
 ## 后续计划
+
+开箱界面可通过 `node tests/gacha.browser.cjs` 运行本机 Edge/Chrome 浏览器回归；可传入截图输出目录，或用 `ALIVE_BROWSER` 指定浏览器路径。覆盖完整播放、单抽 / 十连、跳过不重抽、关闭清理、键盘操作、减少动态效果与手机端滚动。该检查只使用本机演示页面，无需启动数据库。
 
 - 使用对象池降低高频实体创建带来的垃圾回收压力
 - 使用空间哈希减少大量敌人场景中的碰撞检测次数

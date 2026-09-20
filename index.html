@@ -7,8 +7,10 @@
   <meta name="description" content="ALIVE：一款可以直接在浏览器中游玩的生存肉鸽小游戏。">
   <title>ALIVE // 生存协议</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="gacha.css?v=20260920">
   <script src="audio.js?v=20260919-mix2" defer></script>
-  <script src="menu-ui.js" defer></script>
+  <script src="gacha-ui.js?v=20260920" defer></script>
+  <script src="menu-ui.js?v=20260920" defer></script>
   <script src="auth-ui.js" defer></script>
   <script src="balance.js" defer></script>
   <script src="weapons.js" defer></script>
@@ -116,20 +118,50 @@
             <span class="rarity-label">限定武器核心</span>
             <h2>裂变轨道刃</h2>
             <p>高速环绕玩家并切割敌群。重复获取可提升刃片数量与旋转速度。</p>
-            <ul><li>稀有武器概率提升</li><li>十次补给至少获得一件稀有武器</li></ul>
+            <ul><li>机械补给箱 · 沉浸式开箱演示</li><li>蓝 / 紫 / 金光柱揭晓武器核心</li></ul>
           </div>
         </section>
 
         <aside class="supply-controls">
-          <div class="probability-row"><span>演示卡池</span><strong>距离保底 30 次</strong></div>
+          <div class="probability-row"><span>演示卡池</span><strong>单次 / 十连预览</strong></div>
           <div class="pity-track"><i></i></div>
           <p>该页面目前只展示抽卡流程与视觉效果，不会扣除晶核，也不会修改武器库存。</p>
           <button class="draw-button secondary" type="button" data-draw="1"><span>补给 1 次</span><b>100 晶核</b></button>
           <button class="draw-button primary" type="button" data-draw="10"><span>补给 10 次</span><b>900 晶核</b></button>
+          <label class="supply-skip-preference"><input id="skip-supply-animation" type="checkbox"><span>跳过开箱动画</span><small>记住选择</small></label>
           <button class="odds-button" type="button" data-odds>查看概率说明</button>
         </aside>
       </div>
     </section>
+
+    <dialog id="supply-opening" class="supply-opening" aria-labelledby="supply-opening-title" aria-describedby="supply-opening-note" data-phase="idle">
+      <div class="opening-shell">
+        <header class="opening-header">
+          <div><span class="opening-eyebrow">ALIVE / ORBITAL SUPPLY</span><h2 id="supply-opening-title">轨道补给已抵达</h2></div>
+          <button id="supply-close" class="opening-close" type="button" aria-label="关闭补给演示">×</button>
+        </header>
+        <div class="opening-stage" aria-hidden="true">
+          <div class="opening-stars"></div><div class="opening-grid"></div>
+          <div class="opening-halo"></div><div class="opening-ring"></div>
+          <div class="opening-flare"></div>
+          <div class="supply-crate">
+            <div class="crate-lid"><span>ALIVE</span></div>
+            <div class="crate-body"><i class="crate-seam"></i><span class="crate-core">✦</span><b>SUPPLY / 07</b></div>
+            <div class="crate-foot left"></div><div class="crate-foot right"></div>
+          </div>
+          <div class="opening-caption"><span>深空补给舱</span><small>CORE CONTAINMENT SYSTEM</small></div>
+        </div>
+        <section id="supply-rewards" class="supply-rewards" aria-label="本次演示结果" hidden></section>
+        <footer class="opening-footer">
+          <div><p id="supply-opening-status" role="status" aria-live="polite">补给舱正在着陆…</p><small id="supply-opening-note">演示模式 · 不消耗晶核，结果不计入库存</small></div>
+          <button id="supply-skip" class="opening-button secondary" type="button">跳过动画 <kbd>Esc</kbd></button>
+          <div id="supply-result-actions" class="supply-result-actions" hidden>
+            <button id="supply-done" class="opening-button secondary" type="button">返回补给</button>
+            <button id="supply-again" class="opening-button primary" type="button">再演示一次</button>
+          </div>
+        </footer>
+      </div>
+    </dialog>
 
     <section id="auth-overlay" class="auth-surface" hidden aria-modal="true" role="dialog" aria-labelledby="auth-title">
       <div class="auth-panel">
